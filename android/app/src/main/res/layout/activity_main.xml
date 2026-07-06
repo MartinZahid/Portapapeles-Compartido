@@ -126,6 +126,16 @@
             android:layout_marginTop="16dp"
             android:gravity="center" />
 
+        <Button
+            android:id="@+id/sync_btn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Enviar texto de prueba"
+            android:textAllCaps="false"
+            android:backgroundTint="#44ff88"
+            android:textColor="#000"
+            android:layout_marginTop="16dp" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

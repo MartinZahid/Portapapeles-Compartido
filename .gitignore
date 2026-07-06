@@ -4,6 +4,7 @@ clipboard-sync.exe
 build/
 *.apk
 local.properties
+.vs/
 android/.gradle/
 android/app/build/
 android/local.properties

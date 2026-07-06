@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
         val scanBtn = findViewById<Button>(R.id.scan_btn)
         val testBtn = findViewById<Button>(R.id.test_btn)
         val saveBtn = findViewById<Button>(R.id.save_btn)
+        val syncBtn = findViewById<Button>(R.id.sync_btn)
 
         urlInput.setText(config.serverUrl)
         enableSwitch.isChecked = config.enabled
@@ -95,6 +96,29 @@ class MainActivity : AppCompatActivity() {
             options.setBeepEnabled(false)
             options.setBarcodeImageEnabled(false)
             scanContract.launch(options)
+        }
+
+        syncBtn.setOnClickListener {
+            val url = config.serverUrl
+            if (url.isBlank()) {
+                Toast.makeText(this, "Configurá la URL primero", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val text = "Hola desde el S24! ${System.currentTimeMillis()}"
+            syncBtn.isEnabled = false
+            syncBtn.text = "Enviando..."
+            Thread {
+                val ok = ServerApi.sendClipboard(url, text)
+                runOnUiThread {
+                    syncBtn.isEnabled = true
+                    syncBtn.text = "Enviar texto de prueba"
+                    if (ok) {
+                        Toast.makeText(this, "Enviado a PC ✓", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Error al enviar", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }.start()
         }
     }
 
