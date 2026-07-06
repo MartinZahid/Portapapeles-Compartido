@@ -46,9 +46,6 @@ class MainActivity : AppCompatActivity() {
                     enableSwitch.isChecked = false
                     return@setOnCheckedChangeListener
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 0)
-                }
                 openAccessibilityDirect()
             } else {
                 config.enabled = false

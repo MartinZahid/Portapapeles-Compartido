@@ -25,9 +25,14 @@ func getLocalIPs() []string {
 		return []string{"127.0.0.1"}
 	}
 	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
-			ips = append(ips, ipnet.IP.String())
+		ipnet, ok := addr.(*net.IPNet)
+		if !ok || ipnet.IP.IsLoopback() || ipnet.IP.To4() == nil {
+			continue
 		}
+		if ipnet.IP.IsLinkLocalMulticast() || ipnet.IP.IsLinkLocalUnicast() {
+			continue
+		}
+		ips = append(ips, ipnet.IP.String())
 	}
 	if len(ips) == 0 {
 		ips = []string{"127.0.0.1"}
@@ -45,13 +50,14 @@ func main() {
 	port := "3737"
 	ips := getLocalIPs()
 
-	fmt.Println("Escaneá este QR desde tu celular (misma red WiFi):")
-	qr, _ := qrcode.New(fmt.Sprintf("http://%s:%s", ips[0], port), qrcode.Medium)
-	fmt.Print(qr.ToSmallString(false))
-
-	fmt.Println("\nO abrí cualquiera de estas URLs:")
-	for _, ip := range ips {
-		fmt.Printf("  http://%s:%s\n", ip, port)
+	for i, ip := range ips {
+		url := fmt.Sprintf("http://%s:%s", ip, port)
+		if i == 0 {
+			fmt.Println("Escaneá este QR desde tu celular (misma red WiFi):")
+			qr, _ := qrcode.New(url, qrcode.Medium)
+			fmt.Print(qr.ToSmallString(false))
+		}
+		fmt.Printf("  %d) %s\n", i+1, url)
 	}
 
 	http.HandleFunc("/clipboard", func(w http.ResponseWriter, r *http.Request) {
