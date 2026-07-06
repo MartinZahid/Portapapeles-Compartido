@@ -35,4 +35,5 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

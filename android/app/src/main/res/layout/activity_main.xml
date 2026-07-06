@@ -44,27 +44,38 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/save_btn"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Guardar"
-                android:textAllCaps="false"
-                android:backgroundTint="#333"
-                android:textColor="#eee"
-                android:layout_marginEnd="6dp" />
+        <Button
+            android:id="@+id/scan_btn"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Escanear QR"
+            android:textAllCaps="false"
+            android:backgroundTint="#44ff88"
+            android:textColor="#000"
+            android:layout_marginEnd="6dp" />
 
-            <Button
-                android:id="@+id/test_btn"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Probar conexión"
-                android:textAllCaps="false"
-                android:backgroundTint="#4488ff"
-                android:textColor="#fff"
-                android:layout_marginStart="6dp" />
+        <Button
+            android:id="@+id/save_btn"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Guardar"
+            android:textAllCaps="false"
+            android:backgroundTint="#333"
+            android:textColor="#eee"
+            android:layout_marginEnd="6dp" />
+
+        <Button
+            android:id="@+id/test_btn"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Probar conexión"
+            android:textAllCaps="false"
+            android:backgroundTint="#4488ff"
+            android:textColor="#fff"
+            android:layout_marginStart="6dp" />
 
         </LinearLayout>
 

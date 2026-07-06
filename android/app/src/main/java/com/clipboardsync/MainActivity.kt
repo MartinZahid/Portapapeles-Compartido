@@ -1,7 +1,6 @@
 package com.clipboardsync
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -12,6 +11,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         urlInput = findViewById(R.id.url_input)
         enableSwitch = findViewById(R.id.enable_switch)
         statusText = findViewById(R.id.status_text)
+        val scanBtn = findViewById<Button>(R.id.scan_btn)
         val testBtn = findViewById<Button>(R.id.test_btn)
         val saveBtn = findViewById<Button>(R.id.save_btn)
 
@@ -84,6 +86,37 @@ class MainActivity : AppCompatActivity() {
             config.serverUrl = url
             Toast.makeText(this, "URL guardada", Toast.LENGTH_SHORT).show()
         }
+
+        scanBtn.setOnClickListener {
+            val options = ScanOptions()
+            options.setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+            options.setPrompt("Escaneá el QR del servidor")
+            options.setCameraId(0)
+            options.setBeepEnabled(false)
+            options.setBarcodeImageEnabled(false)
+            scanContract.launch(options)
+        }
+    }
+
+    private val scanContract = registerForActivityResult(ScanContract()) { result ->
+        if (result.contents != null) {
+            urlInput.setText(result.contents)
+            config.serverUrl = result.contents
+            testConnection(result.contents)
+        }
+    }
+
+    private fun testConnection(url: String) {
+        Thread {
+            val ok = ServerApi.sendClipboard(url, "test-connection")
+            runOnUiThread {
+                if (ok) {
+                    Toast.makeText(this, "Conexión exitosa ✓", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Error de conexión ✗", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
     }
 
     override fun onResume() {
