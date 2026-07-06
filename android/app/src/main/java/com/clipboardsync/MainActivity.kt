@@ -48,8 +48,7 @@ class MainActivity : AppCompatActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 0)
                 }
-                Toast.makeText(this, "Activá 'Clipboard Sync' en Accesibilidad", Toast.LENGTH_LONG).show()
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                openAccessibilityDirect()
             } else {
                 config.enabled = false
                 updateStatus()
@@ -127,6 +126,20 @@ class MainActivity : AppCompatActivity() {
             urlInput.setText(result.contents)
             config.serverUrl = result.contents
             testConnection(result.contents)
+        }
+    }
+
+    private fun openAccessibilityDirect() {
+        try {
+            val comp = "$packageName/.ClipboardService"
+            val intent = Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS").apply {
+                putExtra(Intent.EXTRA_COMPONENT_NAME, comp)
+            }
+            startActivity(intent)
+            Toast.makeText(this, "Activá el toggle de Clipboard Sync", Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            Toast.makeText(this, "Buscá 'Clipboard Sync' en Accesibilidad", Toast.LENGTH_LONG).show()
         }
     }
 
