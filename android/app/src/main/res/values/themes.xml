@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ClipboardSync" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#00ff88</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorPrimaryContainer">#003d20</item>
+        <item name="colorOnPrimaryContainer">#00ff88</item>
+        <item name="colorSecondary">#4488ff</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="android:statusBarColor">#0f0f0f</item>
+        <item name="android:navigationBarColor">#0f0f0f</item>
+    </style>
+</resources>
