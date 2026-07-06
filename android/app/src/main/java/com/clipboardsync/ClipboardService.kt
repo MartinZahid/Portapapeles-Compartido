@@ -1,11 +1,15 @@
 package com.clipboardsync
 
 import android.accessibilityservice.AccessibilityService
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
+import androidx.core.app.NotificationCompat
 
 class ClipboardService : AccessibilityService() {
 
@@ -14,10 +18,13 @@ class ClipboardService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private val pollInterval = 1500L
     private var started = false
+    private var notificationId = 1001
 
     override fun onCreate() {
         super.onCreate()
         config = ConfigRepository(this)
+        createNotificationChannel()
+        try { showNotification("Servicio activo") } catch (_: Exception) {}
     }
 
     override fun onServiceConnected() {
@@ -62,5 +69,28 @@ class ClipboardService : AccessibilityService() {
         Thread {
             ServerApi.sendClipboard(cfg.serverUrl, text)
         }.start()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "clipboard_sync", "Clipboard Sync",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply { setShowBadge(false) }
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.createNotificationChannel(channel)
+        }
+    }
+
+    private fun showNotification(text: String) {
+        val n = NotificationCompat.Builder(this, "clipboard_sync")
+            .setSmallIcon(android.R.drawable.ic_menu_edit)
+            .setContentTitle("Clipboard Sync")
+            .setContentText(text)
+            .setOngoing(true)
+            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        startForeground(notificationId, n)
     }
 }
