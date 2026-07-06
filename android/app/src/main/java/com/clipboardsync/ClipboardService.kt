@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -24,11 +25,23 @@ class ClipboardService : AccessibilityService() {
         super.onCreate()
         config = ConfigRepository(this)
         createNotificationChannel()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+        createNotificationChannel()
         try { showNotification("Servicio activo") } catch (_: Exception) {}
+        if (!started) {
+            started = true
+            handler.post(pollRunnable)
+        }
+        return START_STICKY
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        createNotificationChannel()
+        try { showNotification("Servicio activo") } catch (_: Exception) {}
         if (!started) {
             started = true
             handler.post(pollRunnable)
