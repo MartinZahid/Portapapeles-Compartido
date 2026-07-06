@@ -2,7 +2,6 @@ package com.clipboardsync
 
 import android.Manifest
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -146,8 +145,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openAccessibilityDirect() {
-        val serviceIntent = Intent(this, ForegroundService::class.java)
-        ContextCompat.startForegroundService(this, serviceIntent)
         try {
             val comp = "$packageName/.ClipboardService"
             val intent = Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS").apply {
@@ -176,11 +173,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val enabled = isAccessibilityEnabled()
-        if (enabled && config.serverUrl.isNotBlank()) {
-            val si = Intent(this, ForegroundService::class.java)
-            ContextCompat.startForegroundService(this, si)
-        }
         checkAccessibilityEnabled()
     }
 
