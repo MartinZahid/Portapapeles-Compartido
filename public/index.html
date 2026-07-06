@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Clipboard Sync</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #0f0f0f;
+    color: #eee;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  h1 { font-size: 1.2rem; margin: 12px 0; opacity: 0.7; }
+  .card {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 480px;
+    margin: 8px 0;
+  }
+  .card label { font-size: 0.8rem; opacity: 0.5; display: block; margin-bottom: 8px; }
+  .card textarea {
+    width: 100%;
+    min-height: 120px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 10px;
+    color: #eee;
+    padding: 12px;
+    font-size: 1rem;
+    resize: vertical;
+    font-family: inherit;
+  }
+  .card textarea:focus { outline: none; border-color: #4f8; }
+  button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .btn-pc { background: #4f8; color: #000; }
+  .btn-pc:active { background: #3d7; }
+  .btn-phone { background: #48f; color: #fff; }
+  .btn-phone:active { background: #37e; }
+  .btn-copy { background: #555; color: #fff; }
+  .btn-copy:active { background: #444; }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .status { font-size: 0.75rem; opacity: 0.4; margin-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>📋 Clipboard Sync</h1>
+
+<div class="card">
+  <label>📥 Portapapeles de la PC</label>
+  <textarea id="pcClipboard" readonly placeholder="Esperando..."></textarea>
+  <button class="btn-copy" onclick="copyPc()">Copiar este texto</button>
+</div>
+
+<div class="card">
+  <label>📤 Enviar a la PC</label>
+  <textarea id="phoneClipboard" placeholder="Escribí aca lo que quieras enviar..."></textarea>
+  <button class="btn-phone" onclick="sendToPc()">Enviar a la PC</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="status" id="status">Conectando...</div>
+
+<script>
+const API = '';
+let pcText = '';
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+async function fetchClipboard() {
+  try {
+    const r = await fetch(API + '/clipboard');
+    const t = await r.text();
+    if (t !== pcText) {
+      pcText = t;
+      document.getElementById('pcClipboard').value = t;
+    }
+    document.getElementById('status').textContent = '✅ Conectado';
+  } catch {
+    document.getElementById('status').textContent = '❌ Sin conexión';
+  }
+}
+
+async function sendToPc() {
+  const val = document.getElementById('phoneClipboard').value;
+  if (!val) return toast('Escribí algo primero');
+  try {
+    await fetch(API + '/clipboard', { method: 'POST', body: val });
+    toast('✅ Enviado a la PC');
+    document.getElementById('phoneClipboard').value = '';
+    await fetchClipboard();
+  } catch {
+    toast('❌ Error al enviar');
+  }
+}
+
+function copyPc() {
+  const val = document.getElementById('pcClipboard').value;
+  if (!val) return toast('No hay texto');
+  navigator.clipboard.writeText(val).then(() => toast('✅ Copiado al portapapeles del celular'));
+}
+
+fetchClipboard();
+setInterval(fetchClipboard, 2000);
+</script>
+</body>
+</html>
