@@ -1,6 +1,7 @@
 package com.clipboardsync
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ClipboardManager
@@ -20,11 +21,21 @@ class ClipboardService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private val pollInterval = 1500L
     private var notificationId = 1001
+    private var started = false
 
     override fun onCreate() {
         super.onCreate()
         config = ConfigRepository(this)
         createNotificationChannel()
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        if (!started) {
+            started = true
+            handler.post(pollRunnable)
+            showNotification("Servicio iniciado")
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -33,15 +44,10 @@ class ClipboardService : AccessibilityService() {
 
     override fun onInterrupt() {}
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        handler.post(pollRunnable)
-        showNotification("Servicio iniciado")
-        return START_STICKY
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(pollRunnable)
+        started = false
     }
 
     private val pollRunnable = object : Runnable {
