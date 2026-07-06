@@ -1,16 +1,13 @@
 package com.clipboardsync
 
 import android.accessibilityservice.AccessibilityService
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import androidx.core.app.NotificationCompat
 
 class ClipboardService : AccessibilityService() {
 
@@ -19,29 +16,21 @@ class ClipboardService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private val pollInterval = 1500L
     private var started = false
-    private var notificationId = 1001
 
     override fun onCreate() {
         super.onCreate()
+        Log.i("ClipboardSync", "ClipboardService onCreate")
         config = ConfigRepository(this)
-        createNotificationChannel()
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        super.onStartCommand(intent, flags, startId)
-        createNotificationChannel()
-        try { showNotification("Servicio activo") } catch (_: Exception) {}
-        if (!started) {
-            started = true
-            handler.post(pollRunnable)
+        try {
+            startForegroundService(Intent(this, ForegroundService::class.java))
+            Log.i("ClipboardSync", "ForegroundService started from ClipboardService")
+        } catch (e: Exception) {
+            Log.e("ClipboardSync", "Failed to start ForegroundService", e)
         }
-        return START_STICKY
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        createNotificationChannel()
-        try { showNotification("Servicio activo") } catch (_: Exception) {}
         if (!started) {
             started = true
             handler.post(pollRunnable)
@@ -82,28 +71,5 @@ class ClipboardService : AccessibilityService() {
         Thread {
             ServerApi.sendClipboard(cfg.serverUrl, text)
         }.start()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "clipboard_sync", "Clipboard Sync",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply { setShowBadge(false) }
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.createNotificationChannel(channel)
-        }
-    }
-
-    private fun showNotification(text: String) {
-        val n = NotificationCompat.Builder(this, "clipboard_sync")
-            .setSmallIcon(android.R.drawable.ic_menu_edit)
-            .setContentTitle("Clipboard Sync")
-            .setContentText(text)
-            .setOngoing(true)
-            .setSilent(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
-        startForeground(notificationId, n)
     }
 }

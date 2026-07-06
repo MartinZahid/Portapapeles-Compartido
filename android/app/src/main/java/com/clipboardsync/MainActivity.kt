@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openAccessibilityDirect() {
-        val serviceIntent = Intent(this, ClipboardService::class.java)
+        val serviceIntent = Intent(this, ForegroundService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
         try {
             val comp = "$packageName/.ClipboardService"
@@ -176,6 +176,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        val enabled = isAccessibilityEnabled()
+        if (enabled && config.serverUrl.isNotBlank()) {
+            val si = Intent(this, ForegroundService::class.java)
+            ContextCompat.startForegroundService(this, si)
+        }
         checkAccessibilityEnabled()
     }
 
