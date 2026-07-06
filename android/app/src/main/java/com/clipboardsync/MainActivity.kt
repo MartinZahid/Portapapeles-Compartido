@@ -1,5 +1,6 @@
 package com.clipboardsync
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -169,13 +170,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAccessibilityEnabled(): Boolean {
-        val service = "${packageName}/.ClipboardService"
+        val cn = ComponentName(packageName, "${packageName}.ClipboardService")
+        val shortForm = cn.flattenToShortString()
+        val longForm = cn.flattenToString()
         return try {
             val enabledServices = Settings.Secure.getString(
                 contentResolver,
                 Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-            )
-            enabledServices?.contains(service) == true
+            ) ?: return false
+            enabledServices.contains(shortForm) || enabledServices.contains(longForm)
         } catch (_: Exception) {
             false
         }
