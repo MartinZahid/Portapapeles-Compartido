@@ -47,7 +47,8 @@ class MainActivity : AppCompatActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 0)
                 }
-                openAccessibilityDirect()
+                Toast.makeText(this, "Activá 'Clipboard Sync' en Accesibilidad", Toast.LENGTH_LONG).show()
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             } else {
                 config.enabled = false
                 updateStatus()
@@ -63,14 +64,14 @@ class MainActivity : AppCompatActivity() {
             testBtn.isEnabled = false
             testBtn.text = "Probando..."
             Thread {
-                val ok = ServerApi.sendClipboard(url, "test-connection")
+                val err = ServerApi.testConnection(url)
                 runOnUiThread {
                     testBtn.isEnabled = true
                     testBtn.text = "Probar conexión"
-                    if (ok) {
+                    if (err == null) {
                         Toast.makeText(this, "Conexión exitosa ✓", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(this, "Error de conexión ✗", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Error: $err", Toast.LENGTH_LONG).show()
                     }
                 }
             }.start()
@@ -107,12 +108,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun testConnection(url: String) {
         Thread {
-            val ok = ServerApi.sendClipboard(url, "test-connection")
+            val err = ServerApi.testConnection(url)
             runOnUiThread {
-                if (ok) {
+                if (err == null) {
                     Toast.makeText(this, "Conexión exitosa ✓", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this, "Error de conexión ✗", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Error: $err", Toast.LENGTH_LONG).show()
                 }
             }
         }.start()
@@ -121,11 +122,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         checkAccessibilityEnabled()
-    }
-
-    private fun openAccessibilityDirect() {
-        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        Toast.makeText(this, "Activá 'Clipboard Sync' en Accesibilidad", Toast.LENGTH_LONG).show()
     }
 
     private fun checkAccessibilityEnabled() {
@@ -158,9 +154,5 @@ class MainActivity : AppCompatActivity() {
             statusText.text = "Activo → $url"
             statusText.setTextColor(0xff00ff88.toInt())
         }
-    }
-
-    companion object {
-        private const val NOTIFICATION_PERMISSION_CODE = 1
     }
 }

@@ -15,6 +15,19 @@ object ServerApi {
 
     private val textMediaType = "text/plain; charset=utf-8".toMediaType()
 
+    fun testConnection(serverUrl: String): String? {
+        return try {
+            val url = "${serverUrl.trimEnd('/')}/clipboard"
+            val request = Request.Builder().url(url).get().build()
+            client.newCall(request).execute().use { resp ->
+                if (resp.isSuccessful) null
+                else "HTTP ${resp.code}"
+            }
+        } catch (e: Exception) {
+            e.message ?: "Error desconocido"
+        }
+    }
+
     fun sendClipboard(serverUrl: String, text: String): Boolean {
         return try {
             val url = "${serverUrl.trimEnd('/')}/clipboard"
