@@ -18,17 +18,21 @@ import (
 //go:embed public
 var content embed.FS
 
-func getLocalIP() string {
+func getLocalIPs() []string {
+	var ips []string
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return "127.0.0.1"
+		return []string{"127.0.0.1"}
 	}
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
-			return ipnet.IP.String()
+			ips = append(ips, ipnet.IP.String())
 		}
 	}
-	return "127.0.0.1"
+	if len(ips) == 0 {
+		ips = []string{"127.0.0.1"}
+	}
+	return ips
 }
 
 func main() {
@@ -39,13 +43,16 @@ func main() {
 	}
 
 	port := "3737"
-	ip := getLocalIP()
-	url := fmt.Sprintf("http://%s:%s", ip, port)
+	ips := getLocalIPs()
 
 	fmt.Println("Escaneá este QR desde tu celular (misma red WiFi):")
-	qr, _ := qrcode.New(url, qrcode.Medium)
+	qr, _ := qrcode.New(fmt.Sprintf("http://%s:%s", ips[0], port), qrcode.Medium)
 	fmt.Print(qr.ToSmallString(false))
-	fmt.Printf("\nO abrí: %s\n", url)
+
+	fmt.Println("\nO abrí cualquiera de estas URLs:")
+	for _, ip := range ips {
+		fmt.Printf("  http://%s:%s\n", ip, port)
+	}
 
 	http.HandleFunc("/clipboard", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -74,6 +81,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-	fmt.Printf("Servidor corriendo en %s\n", url)
+	fmt.Println("Servidor corriendo en puerto 3737")
 	http.ListenAndServe("0.0.0.0:"+port, nil)
 }
