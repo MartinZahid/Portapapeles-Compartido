@@ -50,12 +50,7 @@ class MainActivity : AppCompatActivity() {
                     enableSwitch.isChecked = false
                     return@setOnCheckedChangeListener
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                        notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                }
-                openAccessibilityDirect()
+                requestNotificationAndOpenAccessibility()
             } else {
                 config.enabled = false
                 updateStatus()
@@ -128,7 +123,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val notifPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    private val notifPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        openAccessibilityDirect()
+    }
+
+    private fun requestNotificationAndOpenAccessibility() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            openAccessibilityDirect()
+        }
+    }
 
     private val scanContract = registerForActivityResult(ScanContract()) { result ->
         if (result.contents != null) {
