@@ -9,7 +9,6 @@ import android.widget.EditText
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -48,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 0)
                 }
-                openAccessibilitySettings()
+                openAccessibilityDirect()
             } else {
                 config.enabled = false
                 updateStatus()
@@ -124,16 +123,9 @@ class MainActivity : AppCompatActivity() {
         checkAccessibilityEnabled()
     }
 
-    private fun openAccessibilitySettings() {
-        AlertDialog.Builder(this)
-            .setTitle("Permiso de Accesibilidad")
-            .setMessage("Para monitorear el portapapeles en segundo plano, necesitás activar el servicio de accesibilidad de Clipboard Sync.\n\n" +
-                "Andá a Ajustes > Accesibilidad > Clipboard Sync y activalo.")
-            .setPositiveButton("Abrir ajustes") { _, _ ->
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+    private fun openAccessibilityDirect() {
+        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        Toast.makeText(this, "Activá 'Clipboard Sync' en Accesibilidad", Toast.LENGTH_LONG).show()
     }
 
     private fun checkAccessibilityEnabled() {
