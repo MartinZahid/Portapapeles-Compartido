@@ -7,10 +7,16 @@ import android.app.PendingIntent
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
+import android.view.Gravity
+import android.view.View
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import androidx.core.app.NotificationCompat
 
@@ -20,7 +26,7 @@ class ClipboardService : AccessibilityService() {
     private var config: ConfigRepository? = null
     private val handler = Handler(Looper.getMainLooper())
     private val notifId = 1001
-    private var lastActivityStart = 0L
+    private var overlayView: View? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -37,22 +43,17 @@ class ClipboardService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.i("ClipboardSync", "onServiceConnected")
+        createOverlay()
         startPolling()
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) return
-        Log.i("ClipboardSync", "AccessibilityEvent: type=0x${event.eventType.toString(16)} pkg=${event.packageName}")
-        if (event.eventType and 0x10000 != 0) {
-            Log.i("ClipboardSync", "TYPE_CLIPBOARD_CHANGED event")
-            checkClipboard()
-        }
-    }
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
 
     override fun onInterrupt() {}
 
     override fun onDestroy() {
         super.onDestroy()
+        removeOverlay()
         stopPolling()
         try {
             val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -65,11 +66,55 @@ class ClipboardService : AccessibilityService() {
         if (config?.enabled == true) checkClipboard()
     }
 
+    private fun createOverlay() {
+        if (overlayView != null) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Log.w("ClipboardSync", "SYSTEM_ALERT_WINDOW not granted — overlay skipped")
+            return
+        }
+        try {
+            val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                WindowManager.LayoutParams.TYPE_PHONE
+
+            val params = WindowManager.LayoutParams(
+                1, 1, type,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.START or Gravity.TOP
+                x = 0; y = 0
+            }
+
+            val view = View(this).apply { setBackgroundColor(Color.TRANSPARENT) }
+            wm.addView(view, params)
+            overlayView = view
+            Log.i("ClipboardSync", "Overlay 1x1 created (focusable, not touchable)")
+        } catch (e: Exception) {
+            Log.e("ClipboardSync", "Overlay creation failed", e)
+        }
+    }
+
+    private fun removeOverlay() {
+        overlayView?.let {
+            try {
+                (getSystemService(Context.WINDOW_SERVICE) as WindowManager).removeView(it)
+            } catch (_: Exception) {}
+            overlayView = null
+            Log.i("ClipboardSync", "Overlay removed")
+        }
+    }
+
     private fun startPolling() {
         handler.post(object : Runnable {
             override fun run() {
                 try { checkClipboard() } catch (_: Exception) {}
-                handler.postDelayed(this, 5000)
+                handler.postDelayed(this, 3000)
             }
         })
     }
@@ -87,28 +132,12 @@ class ClipboardService : AccessibilityService() {
             val t = clip.getItemAt(0).coerceToText(this).toString()
             if (t.isNotEmpty() && t != lastText) {
                 lastText = t
-                Log.i("ClipboardSync", "Direct read: ${t.take(30)}")
+                Log.i("ClipboardSync", "Read: ${t.take(30)}")
                 Thread { ServerApi.sendClipboard(cfg.serverUrl, t) }.start()
             }
         } else {
-            val now = System.currentTimeMillis()
-            if (now - lastActivityStart > 30000) {
-                readClipboardViaActivity()
-            }
-        }
-    }
-
-    private fun readClipboardViaActivity() {
-        lastActivityStart = System.currentTimeMillis()
-        Log.i("ClipboardSync", "Starting reader activity fallback")
-        try {
-            startActivity(
-                Intent(this, ClipboardReaderActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            )
-        } catch (e: Exception) {
-            Log.e("ClipboardSync", "Failed to start reader activity", e)
+            val overlayActive = overlayView != null
+            Log.i("ClipboardSync", "primaryClip=null (overlayActive=$overlayActive)")
         }
     }
 
@@ -131,7 +160,7 @@ class ClipboardService : AccessibilityService() {
         val notification = NotificationCompat.Builder(this, "clipboard_sync")
             .setSmallIcon(android.R.drawable.ic_menu_edit)
             .setContentTitle("Clipboard Sync")
-            .setContentText("Servicio activo")
+            .setContentText("Overlay activo · $notifId")
             .setOngoing(true)
             .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

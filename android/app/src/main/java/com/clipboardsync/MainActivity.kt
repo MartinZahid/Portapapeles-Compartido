@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         val testBtn = findViewById<Button>(R.id.test_btn)
         val saveBtn = findViewById<Button>(R.id.save_btn)
         val syncBtn = findViewById<Button>(R.id.sync_btn)
+        val overlayBtn = findViewById<Button>(R.id.overlay_btn)
         val batteryBtn = findViewById<Button>(R.id.battery_btn)
 
         urlInput.setText(config.serverUrl)
@@ -123,13 +125,32 @@ class MainActivity : AppCompatActivity() {
             }.start()
         }
 
+        overlayBtn.setOnClickListener {
+            if (Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "Permiso ya concedido ✓", Toast.LENGTH_SHORT).show()
+            } else {
+                try {
+                    startActivity(
+                        Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")
+                        )
+                    )
+                } catch (_: Exception) {
+                    startActivity(Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS))
+                    Toast.makeText(this, "Buscá 'Clipboard Sync' y activá 'Superposición'", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         batteryBtn.setOnClickListener {
             try {
-                val intent = Intent(
-                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    android.net.Uri.parse("package:$packageName")
+                startActivity(
+                    Intent(
+                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:$packageName")
+                    )
                 )
-                startActivity(intent)
             } catch (_: Exception) {
                 Toast.makeText(this, "Abrí Ajustes > Apps > Clipboard Sync > Batería > Sin restricción", Toast.LENGTH_LONG).show()
             }
@@ -154,6 +175,23 @@ class MainActivity : AppCompatActivity() {
             urlInput.setText(result.contents)
             config.serverUrl = result.contents
             testConnection(result.contents)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkAccessibilityEnabled()
+        updateOverlayButtonText()
+    }
+
+    private fun updateOverlayButtonText() {
+        val btn = findViewById<Button>(R.id.overlay_btn)
+        if (Settings.canDrawOverlays(this)) {
+            btn.text = "Paso 2: Superposición ✓ Concedido"
+            btn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xff00aa55.toInt()))
+        } else {
+            btn.text = "Paso 2: Permitir superposición (SYSTEM_ALERT_WINDOW)"
+            btn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xffff4444.toInt()))
         }
     }
 
@@ -182,11 +220,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }.start()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        checkAccessibilityEnabled()
     }
 
     private fun checkAccessibilityEnabled() {

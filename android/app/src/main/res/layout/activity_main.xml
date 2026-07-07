@@ -146,24 +146,26 @@
             android:lineSpacingExtra="3dp" />
 
         <Button
-            android:id="@+id/battery_btn"
+            android:id="@+id/overlay_btn"
             android:layout_width="match_parent"
             android:layout_height="44dp"
-            android:text="Paso 2: Optimización de batería - Sin restricción"
+            android:text="Paso 2: Permitir superposición (SYSTEM_ALERT_WINDOW)"
             android:textAllCaps="false"
             android:textSize="12sp"
             android:backgroundTint="#ff4444"
             android:textColor="#fff"
             android:layout_marginTop="12dp" />
 
-        <TextView
+        <Button
+            android:id="@+id/battery_btn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Paso 3 (Samsung): Ajustes > Cuidado batería > Apps en reposo profundo > Sacar Clipboard Sync de la lista"
-            android:textColor="#555"
+            android:layout_height="44dp"
+            android:text="Opcional: Sin restricción de batería"
+            android:textAllCaps="false"
             android:textSize="12sp"
-            android:layout_marginTop="12dp"
-            android:lineSpacingExtra="3dp" />
+            android:backgroundTint="#ff6644"
+            android:textColor="#fff"
+            android:layout_marginTop="8dp" />
 
     </LinearLayout>
 
