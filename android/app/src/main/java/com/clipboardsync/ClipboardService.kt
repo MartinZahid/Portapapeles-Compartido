@@ -19,9 +19,8 @@ class ClipboardService : AccessibilityService() {
     private var lastText = ""
     private var config: ConfigRepository? = null
     private val handler = Handler(Looper.getMainLooper())
-    private val pollInterval = 2000L
-    private var started = false
     private val notifId = 1001
+    private var lastActivityStart = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -29,52 +28,88 @@ class ClipboardService : AccessibilityService() {
         config = ConfigRepository(this)
         createNotificationChannel()
         showNotification()
+        try {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.addPrimaryClipChangedListener(clipListener)
+        } catch (_: Exception) {}
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.i("ClipboardSync", "onServiceConnected")
-        if (!started) {
-            started = true
-            handler.post(pollRunnable)
-        }
+        startPolling()
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event == null) return
+        Log.i("ClipboardSync", "AccessibilityEvent: type=0x${event.eventType.toString(16)} pkg=${event.packageName}")
+        if (event.eventType and 0x10000 != 0) {
+            Log.i("ClipboardSync", "TYPE_CLIPBOARD_CHANGED event")
+            checkClipboard()
+        }
+    }
 
     override fun onInterrupt() {}
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacks(pollRunnable)
-        started = false
+        stopPolling()
+        try {
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.removePrimaryClipChangedListener(clipListener)
+        } catch (_: Exception) {}
     }
 
-    private val pollRunnable = object : Runnable {
-        override fun run() {
-            try { checkClipboard() } catch (_: Exception) {}
-            handler.postDelayed(this, pollInterval)
-        }
+    private val clipListener = ClipboardManager.OnPrimaryClipChangedListener {
+        Log.i("ClipboardSync", "OnPrimaryClipChangedListener fired")
+        if (config?.enabled == true) checkClipboard()
+    }
+
+    private fun startPolling() {
+        handler.post(object : Runnable {
+            override fun run() {
+                try { checkClipboard() } catch (_: Exception) {}
+                handler.postDelayed(this, 5000)
+            }
+        })
+    }
+
+    private fun stopPolling() {
+        handler.removeCallbacksAndMessages(null)
     }
 
     private fun checkClipboard() {
         val cfg = config ?: return
         if (!cfg.enabled || cfg.serverUrl.isBlank()) return
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = cm.primaryClip ?: return
-        if (clip.itemCount == 0) return
-        val t = clip.getItemAt(0).coerceToText(this).toString()
-        if (t.isEmpty() || t == lastText) return
-        lastText = t
-        sendToPc(t)
+        val clip = cm.primaryClip
+        if (clip != null && clip.itemCount > 0) {
+            val t = clip.getItemAt(0).coerceToText(this).toString()
+            if (t.isNotEmpty() && t != lastText) {
+                lastText = t
+                Log.i("ClipboardSync", "Direct read: ${t.take(30)}")
+                Thread { ServerApi.sendClipboard(cfg.serverUrl, t) }.start()
+            }
+        } else {
+            val now = System.currentTimeMillis()
+            if (now - lastActivityStart > 30000) {
+                readClipboardViaActivity()
+            }
+        }
     }
 
-    private fun sendToPc(text: String) {
-        Log.i("ClipboardSync", "Enviando: ${text.take(30)}")
-        val cfg = config ?: return
-        Thread {
-            ServerApi.sendClipboard(cfg.serverUrl, text)
-        }.start()
+    private fun readClipboardViaActivity() {
+        lastActivityStart = System.currentTimeMillis()
+        Log.i("ClipboardSync", "Starting reader activity fallback")
+        try {
+            startActivity(
+                Intent(this, ClipboardReaderActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            )
+        } catch (e: Exception) {
+            Log.e("ClipboardSync", "Failed to start reader activity", e)
+        }
     }
 
     private fun createNotificationChannel() {

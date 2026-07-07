@@ -12,4 +12,8 @@ class ConfigRepository(context: Context) {
     var enabled: Boolean
         get() = prefs.getBoolean("enabled", false)
         set(value) = prefs.edit().putBoolean("enabled", value).apply()
+
+    var lastSeenClipboard: String
+        get() = prefs.getString("last_seen", "") ?: ""
+        set(value) = prefs.edit().putString("last_seen", value).apply()
 }

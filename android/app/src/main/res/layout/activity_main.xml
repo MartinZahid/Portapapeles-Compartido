@@ -139,10 +139,30 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Requerimiento: al activar, debés habilitar el servicio de accesibilidad en Ajustes > Accesibilidad > Clipboard Sync"
+            android:text="Paso 1: Activá el servicio de accesibilidad en Ajustes > Accesibilidad > Clipboard Sync"
             android:textColor="#555"
             android:textSize="12sp"
             android:layout_marginTop="24dp"
+            android:lineSpacingExtra="3dp" />
+
+        <Button
+            android:id="@+id/battery_btn"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="Paso 2: Optimización de batería - Sin restricción"
+            android:textAllCaps="false"
+            android:textSize="12sp"
+            android:backgroundTint="#ff4444"
+            android:textColor="#fff"
+            android:layout_marginTop="12dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Paso 3 (Samsung): Ajustes > Cuidado batería > Apps en reposo profundo > Sacar Clipboard Sync de la lista"
+            android:textColor="#555"
+            android:textSize="12sp"
+            android:layout_marginTop="12dp"
             android:lineSpacingExtra="3dp" />
 
     </LinearLayout>

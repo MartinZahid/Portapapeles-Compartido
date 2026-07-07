@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         val testBtn = findViewById<Button>(R.id.test_btn)
         val saveBtn = findViewById<Button>(R.id.save_btn)
         val syncBtn = findViewById<Button>(R.id.sync_btn)
+        val batteryBtn = findViewById<Button>(R.id.battery_btn)
 
         urlInput.setText(config.serverUrl)
         enableSwitch.isChecked = config.enabled
@@ -120,6 +121,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }.start()
+        }
+
+        batteryBtn.setOnClickListener {
+            try {
+                val intent = Intent(
+                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    android.net.Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+            } catch (_: Exception) {
+                Toast.makeText(this, "Abrí Ajustes > Apps > Clipboard Sync > Batería > Sin restricción", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
