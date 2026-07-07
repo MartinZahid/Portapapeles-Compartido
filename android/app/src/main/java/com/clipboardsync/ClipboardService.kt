@@ -22,7 +22,6 @@ class ClipboardService : AccessibilityService() {
     private val pollInterval = 2000L
     private var started = false
     private val notifId = 1001
-    private val CLIPBOARD_CHANGED = 0x00002000
 
     override fun onCreate() {
         super.onCreate()
@@ -41,11 +40,7 @@ class ClipboardService : AccessibilityService() {
         }
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType == CLIPBOARD_CHANGED) {
-            checkClipboard()
-        }
-    }
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
 
     override fun onInterrupt() {}
 
@@ -68,10 +63,10 @@ class ClipboardService : AccessibilityService() {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = cm.primaryClip ?: return
         if (clip.itemCount == 0) return
-        val text = clip.getItemAt(0).coerceToText(this).toString()
-        if (text.isEmpty() || text == lastText) return
-        lastText = text
-        sendToPc(text)
+        val t = clip.getItemAt(0).coerceToText(this).toString()
+        if (t.isEmpty() || t == lastText) return
+        lastText = t
+        sendToPc(t)
     }
 
     private fun sendToPc(text: String) {
